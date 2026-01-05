@@ -1,0 +1,95 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+// 1. Estructura del Objeto
+typedef struct {
+    int id;
+    double valor;
+    double peso;
+    double ratio; // Valor por unidad de peso
+} Articulo;
+
+// 2. Función de Comparación para qsort (Orden descendente por ratio)
+int comparar(const void *a, const void *b) {
+    Articulo *a1 = (Articulo *)a;
+    Articulo *b1 = (Articulo *)b;
+    if (a1->ratio < b1->ratio) return 1;
+    if (a1->ratio > b1->ratio) return -1;
+    return 0;
+}
+
+// 3. Lógica del Algoritmo Voraz (Greedy)
+double mochilaFraccionaria(int W, Articulo arr[], int n) {
+    // Calculamos los ratios primero
+    int i;
+	for ( i = 0; i < n; i++) {
+        arr[i].ratio = arr[i].valor / arr[i].peso;
+    }
+
+    // Ordenamos usando Quicksort (nativo de C) -> O(N log N)
+    qsort(arr, n, sizeof(Articulo), comparar);
+
+    double valorActual = 0.0;
+    double pesoActual = 0.0;
+
+    // Iteramos sobre los objetos ordenados -> O(N)
+    int k;
+	for ( k = 0; k < n; k++) {
+        // Si el objeto cabe entero
+        if (pesoActual + arr[k].peso <= W) {
+            pesoActual += arr[k].peso;
+            valorActual += arr[k].valor;
+        }
+        // Si no cabe entero, tomamos la fracción necesaria y terminamos
+        else {
+            double espacioRestante = W - pesoActual;
+            valorActual += arr[k].valor * (espacioRestante / arr[k].peso);
+            break; // La mochila está llena
+        }
+    }
+    return valorActual;
+}
+
+// Función auxiliar para generar datos aleatorios y probar
+void ejecutarPrueba(int n) {
+    Articulo *items = (Articulo *)malloc(n * sizeof(Articulo));
+    
+    // Capacidad de la mochila (simulamos que es el 50% del peso total posible aprox)
+    int capacidadMochila = n * 5; 
+
+    // Generación de datos aleatorios
+    int i;
+	for ( i = 0; i < n; i++) {
+        items[i].id = i + 1;
+        items[i].valor = (rand() % 100) + 1; // Valor entre 1 y 100
+        items[i].peso = (rand() % 20) + 1;   // Peso entre 1 y 20
+    }
+
+    // Medición de tiempo
+    clock_t inicio = clock();
+    double maxValor = mochilaFraccionaria(capacidadMochila, items, n);
+    clock_t fin = clock();
+    
+    double tiempoSegundos = (double)(fin - inicio) / CLOCKS_PER_SEC;
+
+    printf("---------------------------------------------------\n");
+    printf("Prueba con N = %d articulos\n", n);
+    printf("Capacidad Mochila: %d\n", capacidadMochila);
+    printf("Valor Maximo obtenido: %.2f\n", maxValor);
+    printf("Tiempo de ejecucion: %.6f segundos\n", tiempoSegundos);
+
+    free(items);
+}
+
+int main() {
+    srand(time(NULL)); // Semilla para aleatoriedad
+
+    printf("=== SIMULACION MOCHILA FRACCIONARIA ===\n");
+    
+    ejecutarPrueba(10);
+    ejecutarPrueba(100);
+    ejecutarPrueba(1000);
+
+    return 0;
+}
